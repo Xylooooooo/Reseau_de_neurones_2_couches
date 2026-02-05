@@ -1,5 +1,5 @@
 from squelette import *
-
+from chargement_dataset_image import *
 
 def test_init_classique():
     nb_x = 3
@@ -67,10 +67,17 @@ def reseau_2(X, Y, dimension_couches, learning_rate, epoch) :
 
     return parametres, couts
 
+def test_reseau_image(dossier_chat, dossier_chien, dimension_couches, learning_rate, epoch) :
+    X, Y = charger_dataset(dossier_chat, dossier_chien)
+    parametres_finaux, couts = reseau_2(X, Y, dimension_couches, learning_rate, epoch)
+    return parametres_finaux
 
 if __name__ == "__main__":
     # main()
-
+    '''
+    # ====================================================================================================
+    # ======================================Test 1========================================================
+    # ====================================================================================================
     # X : 4 exemples avec 2 caractéristiques
     X = np.array([[0, 0, 1, 1], 
                 [0, 1, 0, 1]])
@@ -105,3 +112,43 @@ if __name__ == "__main__":
     plt.xlabel('Itérations (x100)')
     plt.title("Courbe d'apprentissage")
     plt.show()
+    # ====================================================================================================
+    # ======================================Test 1========================================================
+    # ====================================================================================================
+    '''
+
+    # ====================================================================================================
+    # ======================================Test 2========================================================
+    # ====================================================================================================
+    parametres_finaux = test_reseau_image(dossier_chat="animals/cat", dossier_chien="animals/dog", dimension_couches = [12288, 30, 1], learning_rate = 0.003, epoch = 5000)
+    print(parametres_finaux)
+
+    image_originale = Image.open("images.jpg")
+    image_lisse = image_originale.resize((64, 64))
+    image_array = np.array(image_lisse)
+    mon_image_X = image_array.reshape((1, 12288)).T
+    mon_image_X = mon_image_X / 255.0
+
+    # Prediction
+    W1 = parametres_finaux["W1"]
+    b1 = parametres_finaux["b1"]
+    W2 = parametres_finaux["W2"]
+    b2 = parametres_finaux["b2"]
+
+    Z1 = np.dot(W1, mon_image_X) + b1
+    A1 = np.maximum(0, Z1)
+
+    Z2 = np.dot(W2, A1) + b2
+    A2 = 1 / (1 + np.exp(-Z2))  # Sigmoid
+
+    # Résultat
+    probabilite = A2[0][0]
+    
+    print("\n--- RÉSULTAT DU TEST ---")
+    print(f"Probabilité calculée : {probabilite:.4f}")
+
+    if probabilite > 0.5:
+        print(f" C'est un chat ! (Confiance : {probabilite*100:.2f}%)")
+    else:
+        confiance_chien = (1 - probabilite) * 100
+        print(f" C'est un chient ! (Confiance : {confiance_chien:.2f}%)")
